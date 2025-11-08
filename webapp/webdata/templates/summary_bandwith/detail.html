@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+{% block title %}Generation Detail{% endblock %}
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 mb-2">
+            <a href="{{ request.referrer or url_for('main.index') }}" class="btn btn-outline-secondary mb-4">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <a href="{{ url_for('main.history') }}" class="btn btn-outline-primary mb-4">
+                <i class="bi bi-arrow-left"></i> History
+            </a>
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4 class="mb-0">{{ generation.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>ID</strong></label>
+                            <input type="text" class="form-control" value="{{ generation.id }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Created</strong></label>
+                            <input type="text" class="form-control" value="{{ generation.created_at }}" readonly>
+                        </div>
+                    </form>
+                    <div class="d-flex gap-2 mt-4">
+                        <a href="{{ url_for('main.download_pdf', id=generation.id) }}" class="btn btn-outline-primary" aria-label="Download original PDF">
+                            <i class="bi bi-file-earmark-pdf"></i> Download Original PDF
+                        </a>
+                        <a href="{{ url_for('main.download_csv', id=generation.id) }}" class="btn btn-outline-success" aria-label="Download CSV">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Download CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

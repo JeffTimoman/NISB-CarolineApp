@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} {% endblock title%}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous"> -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"> -->
+    <style>
+        body {
+            background-color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .flash-messages {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            min-width: 350px;
+            max-width: 450px;
+        }
+
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .greeting-container {
+            display: inline-block;
+            /* padding: 24px 32px; */
+            /* border-radius: 18px; */
+            /* box-shadow: 0 4px 24px rgba(60, 60, 120, 0.07); */
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            font-size: 1.5rem;
+            color: #222;
+            letter-spacing: 1px;
+            /* margin-top: 40px; */
+            transition: box-shadow 0.2s;
+        }
+
+        .greeting-hello {
+            color: #2a7ae2;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-family: 'Fira Mono', 'Consolas', monospace;
+        }
+
+        .greeting-cursor {
+            display: inline-block;
+            width: 1ch;
+            color: #2a7ae2;
+            font-weight: bold;
+            animation: blink-cursor 1s steps(1) infinite;
+            font-family: 'Fira Mono', 'Consolas', monospace;
+        }
+
+        @keyframes blink-cursor {
+
+            0%,
+            49% {
+                opacity: 1;
+            }
+
+            50%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .greeting-name {
+            color: #444;
+            font-weight: 500;
+            margin-left: 6px;
+        }
+
+        .greeting-lang {
+            font-size: 1rem;
+            color: #888;
+            margin-left: 14px;
+            font-style: italic;
+            vertical-align: middle;
+        }
+    </style>
+    {% block style %}{% endblock style %}
+</head>
+
+<body>
+
+    <div class="flash-messages" id="flashMessages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <strong>
+                {% if category == 'success' %}
+                <i class="bi bi-check-circle-fill me-2"></i>Success!
+                {% elif category == 'danger' %}
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Error!
+                {% elif category == 'warning' %}
+                <i class="bi bi-exclamation-circle-fill me-2"></i>Warning!
+                {% elif category == 'info' %}
+                <i class="bi bi-info-circle-fill me-2"></i>Information
+                {% elif category == 'primary' %}
+                <i class="bi bi-bell-fill me-2"></i>Notification
+                {% endif %}
+            </strong>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <strong><img src="{{ url_for('static', filename='img/brandicon.webp') }}" alt="Brand Icon"
+                        style="height:35px;"></strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{url_for('main.index')}}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('main.history')}}">History</a>
+                    </li>
+                    <!-- <li class="nav-item">
+                <a class="nav-link" href="#"></a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#"></a>
+              </li> -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container p-0 col mt-4">
+        <div class="col-md-12 mb-3">
+            <h3 id="greetingMessage" class="greeting-container">
+                <span id="helloWord" class="greeting-hello">Hello</span><span class="greeting-cursor">|</span>,
+                
+                <span class="greeting-name">{{ user_confi_name }}!</span>
+                <span id="langName" class="greeting-lang">(English)</span>
+            </h3>
+        </div>
+        {% block body %}
+
+        {% endblock body %}
+    </div>
+    <div id="loadingOverlay"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); justify-content:center; align-items:center;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    {% block script %}{% endblock script %}
+
+    <script>
+        $(function () {
+            const greetings = [
+                { lang: "English", hello: "Hello" },
+                { lang: "Spanish", hello: "Hola" },
+                { lang: "French", hello: "Bonjour" },
+                { lang: "German", hello: "Hallo" },
+                { lang: "Italian", hello: "Ciao" },
+                { lang: "Portuguese", hello: "Olá" },
+                { lang: "Russian", hello: "Здравствуйте" },
+                { lang: "Chinese", hello: "你好" },
+                { lang: "Japanese", hello: "こんにちは" },
+                { lang: "Korean", hello: "안녕하세요" },
+                { lang: "Hindi", hello: "नमस्ते" },
+                { lang: "Arabic", hello: "مرحبا" },
+                { lang: "Turkish", hello: "Merhaba" },
+                { lang: "Dutch", hello: "Hallo" },
+                { lang: "Greek", hello: "Γειά σας" },
+                { lang: "Swedish", hello: "Hej" },
+                { lang: "Norwegian", hello: "Hallo" },
+                { lang: "Finnish", hello: "Hei" },
+                { lang: "Danish", hello: "Hej" },
+                { lang: "Polish", hello: "Cześć" },
+                { lang: "Czech", hello: "Ahoj" },
+                { lang: "Hungarian", hello: "Szia" },
+                { lang: "Romanian", hello: "Salut" },
+                { lang: "Thai", hello: "สวัสดี" },
+                { lang: "Vietnamese", hello: "Xin chào" },
+                { lang: "Indonesian", hello: "Halo" },
+                { lang: "Filipino", hello: "Kamusta" },
+                { lang: "Hebrew", hello: "שלום" },
+                { lang: "Swahili", hello: "Habari" },
+                { lang: "Bengali", hello: "হ্যালো" },
+                { lang: "Urdu", hello: "ہیلو" },
+                { lang: "Malay", hello: "Halo" },
+                { lang: "Ukrainian", hello: "Привіт" },
+                { lang: "Serbian", hello: "Здраво" },
+                { lang: "Croatian", hello: "Bok" },
+                { lang: "Bulgarian", hello: "Здравейте" },
+                { lang: "Slovak", hello: "Ahoj" },
+                { lang: "Slovenian", hello: "Živjo" },
+                { lang: "Lithuanian", hello: "Labas" },
+                { lang: "Latvian", hello: "Sveiki" },
+                { lang: "Estonian", hello: "Tere" },
+                { lang: "Persian", hello: "سلام" },
+                { lang: "Georgian", hello: "გამარჯობა" },
+                { lang: "Armenian", hello: "Բարեւ" },
+                { lang: "Azerbaijani", hello: "Salam" },
+                { lang: "Albanian", hello: "Përshëndetje" },
+                { lang: "Macedonian", hello: "Здраво" },
+                { lang: "Basque", hello: "Kaixo" }
+            ];
+            let current = 0;
+
+            function animateChange(newHello, newLang) {
+                const $hello = $("#helloWord");
+                const $lang = $("#langName");
+                let oldHello = $hello.text();
+                let i = oldHello.length;
+
+                // Reverse typing (deleting)
+                function deleteChar() {
+                    if (i > 0) {
+                        $hello.text(oldHello.substring(0, i - 1));
+                        i--;
+                        setTimeout(deleteChar, 50);
+                    } else {
+                        // After deletion, start typing new greeting
+                        typeChar(0);
+                    }
+                }
+
+                // Typing new greeting
+                function typeChar(j) {
+                    if (j <= newHello.length) {
+                        $hello.text(newHello.substring(0, j));
+                        setTimeout(function () { typeChar(j + 1); }, 70);
+                    } else {
+                        // Update language name after typing
+                        $lang.text(`(${newLang})`);
+                    }
+                }
+
+                deleteChar();
+            }
+
+            function changeGreeting() {
+                current = (current + 1) % greetings.length;
+                const greet = greetings[current];
+                animateChange(greet.hello, greet.lang);
+            }
+
+            // Initial setup
+            $("#helloWord").text(greetings[0].hello);
+            $("#langName").text(`(${greetings[0].lang})`);
+
+            setInterval(changeGreeting, 3000);
+        });
+    </script>
+</body>
+
+</html>

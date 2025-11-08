@@ -1,0 +1,12 @@
+# folder appEnv and anything inside it
+appEnv/
+# Python cache files
+__pycache__/
+*.pyc
+# virtual environment folder
+venv/
+# database file
+web.db
+# instance folder
+instance/
+migrations/

@@ -1,0 +1,85 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">IP Allocation</div>
+            <div class="card-body">
+                <label for="ipAllocation" class="form-label">Upload IP Allocation Excel</label>
+                <input class="form-control" type="file" id="ipAllocation" name="file" accept=".xls,.xlsx">
+                <div id="uploadFeedback" class="mt-3"></div>
+                <!-- Success modal (similar to summary_bandwith) -->
+                <div class="modal fade" id="ipUploadModal" tabindex="-1" aria-labelledby="ipUploadModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="ipUploadModalLabel">IP Allocation Uploaded</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Upload and parsing succeeded.</p>
+                                <p><strong>Start IP:</strong> <span id="modalStartIp"></span></p>
+                                <p><strong>Provider:</strong> <span id="modalProvider"></span></p>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" id="goToIpDetailBtn" class="btn btn-primary">Go to Detail</a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                Download Sample Excel Format:
+                <a href="/static/samples/ip_allocation_sample.xlsx" class="btn btn-link">IP Allocation Sample</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function showFlash(type, message) {
+        var cls = type === 'success' ? 'alert-success' : 'alert-danger';
+        $('#uploadFeedback').html('<div class="alert '+cls+'" role="alert">'+message+'</div>');
+    }
+
+    $('#ipAllocation').on('change', function (e) {
+        var files = e.target.files;
+        if (!files.length) return;
+        var formData = new FormData();
+        formData.append('file', files[0]);
+
+        showFlash('info', 'Uploading...');
+
+        $.ajax({
+            url: "{{ url_for('ip_allocation.upload_file') }}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+                success: function (resp) {
+                    if (!resp.success) {
+                        showFlash('error', resp.message || 'Upload failed');
+                        return;
+                    }
+
+                    showFlash('success', 'Upload and parsing succeeded');
+
+                    // fill modal summary
+                    $('#modalStartIp').text(resp.start_ip || '');
+                    $('#modalProvider').text(resp.provider || '');
+
+                    // set redirect to detail page
+                    var detailUrl = "{{ url_for('ip_allocation.detail') }}" + '?id=' + encodeURIComponent(resp.id);
+                    $('#goToIpDetailBtn').attr('href', detailUrl);
+
+                    var myModal = new bootstrap.Modal(document.getElementById('ipUploadModal'));
+                    myModal.show();
+                },
+            error: function (xhr) {
+                var text = xhr.responseText || 'Error uploading file';
+                showFlash('error', text);
+            }
+        });
+    });
+</script>

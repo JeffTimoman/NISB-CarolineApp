@@ -1,0 +1,198 @@
+{% extends 'layout.html' %}
+{% block title %}History{% endblock title %}
+{% block style %}{% endblock style%}
+
+{% block body %}
+<div class="container mt-4">
+    <h2>Summary Bandwith History</h2>
+    <div id="accordion-history">
+
+    </div>
+    <nav>
+        <ul class="pagination justify-content-center mt-3" id="pagination">
+
+        </ul>
+    </nav>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock body %}
+{% block script %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let editingId = null;
+    let currentPage = 1;
+    let expandedId = null; // Track which panel is open
+
+    function fetchHistory(page = 1, expandId = null) {
+        currentPage = page;
+        fetch(`/api/summary_bandwiths?page=${page}`)
+            .then(response => response.json())
+            .then(data => {
+                renderAccordion(data.items, expandId);
+                renderPagination(data.page, data.pages, data.has_prev, data.has_next, data.prev_num, data.next_num);
+            });
+    }
+
+    function renderAccordion(items, expandId = null) {
+        const container = document.getElementById('accordion-history');
+        container.innerHTML = '';
+        if (items.length === 0) {
+            container.innerHTML = '<p>No history found.</p>';
+            return;
+        }
+        items.forEach((item, idx) => {
+            const collapseId = `collapse${item.id}`;
+            const isExpanded = expandId ? (expandId === item.id) : (idx === 0);
+            container.innerHTML += `
+            <div class="card" id="card-${item.id}">
+                <div class="card-header" id="heading${item.id}">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        ${editingId === item.id ? renderEditNameInput(item) : renderHeader(item)}
+                    </h5>
+                </div>
+                <div id="${collapseId}" class="collapse ${isExpanded ? 'show' : ''}" aria-labelledby="heading${item.id}" data-parent="#accordion-history">
+                   <div class="card-body">
+                    <p>
+                        <strong>PDF Filename:</strong> 
+                        ${item.pdf_filename || '-'}
+                    </p>
+                    <p>
+                        <strong>PDF Original Name:</strong> 
+                        ${item.pdf_original_name || '-'}
+                        ${item.pdf_original_name ? `
+                            <a href="/download/pdf/${item.id}" target="_blank" class="ml-2" title="Download PDF">
+                                <i class="fa fa-file-pdf text-danger"></i>
+                            </a>
+                        ` : ''}
+                    </p>
+                    <p>
+                        <strong>CSV Filename:</strong> 
+                        ${item.csv_filename || '-'}
+                        ${item.csv_filename ? `
+                            <a href="/download/csv/${item.id}" target="_blank" class="ml-2" title="Download CSV">
+                                <i class="fa fa-file-excel text-success"></i>
+                            </a>
+                        ` : ''}
+                    </p>
+                    <p><strong>Created At:</strong> ${item.created_at}</p>
+                    <p><strong>Updated At:</strong> ${item.updated_at}</p>
+
+                </div>
+                </div>
+            </div>
+        `;
+        });
+        /*
+                             <p>
+                        <strong>Actions:</strong>
+                        <a href="/summary_bandwith/detail?id=${item.id}" class="ml-2" title="View Details">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    </p>
+        */
+        // After rendering, re-enable all edit buttons except the one being edited
+        Array.from(document.querySelectorAll('.btn-edit-name')).forEach(btn => {
+            btn.disabled = !!editingId;
+        });
+    }
+
+    function renderHeader(item) {
+        return `
+        <button class="btn btn-link flex-grow-1 text-left" data-toggle="collapse" data-target="#collapse${item.id}" aria-expanded="false" aria-controls="collapse${item.id}">
+            <span id="name-display-${item.id}">${item.name}</span>
+            <span class="text-muted">(${item.created_at})</span>
+        </button>
+        <button class="btn btn-sm btn-light ml-2 btn-edit-name" title="Edit name" onclick="startEditName('${item.id}', '${item.name.replace(/'/g, "\\'")}'); event.stopPropagation();">
+            <i class="fa fa-pen"></i>
+        </button>
+    `;
+    }
+
+    function renderEditNameInput(item) {
+        return `
+        <span class="flex-grow-1">
+            <input type="text" class="form-control form-control-sm d-inline-block" id="edit-name-input-${item.id}" value="${item.name.replace(/"/g, '&quot;')}" style="max-width: 300px;">
+        </span>
+        <button class="btn btn-sm btn-success ml-1" onclick="submitEditName('${item.id}')"><i class="fa fa-check"></i></button>
+        <button class="btn btn-sm btn-danger ml-1" onclick="cancelEditName('${item.id}')"><i class="fa fa-times"></i></button>
+    `;
+    }
+
+    function renderPagination(current, total, hasPrev, hasNext, prevNum, nextNum) {
+        const pag = document.getElementById('pagination');
+        pag.innerHTML = '';
+        if (hasPrev) {
+            pag.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchHistory(${prevNum});return false;">Previous</a></li>`;
+        }
+        for (let i = 1; i <= total; i++) {
+            pag.innerHTML += `<li class="page-item ${i === current ? 'active' : ''}"><a class="page-link" href="#" onclick="fetchHistory(${i});return false;">${i}</a></li>`;
+        }
+        if (hasNext) {
+            pag.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchHistory(${nextNum});return false;">Next</a></li>`;
+        }
+    }
+
+    function startEditName(id, currentName) {
+        if (editingId) return; // Only one edit at a time
+        editingId = id;
+        renderAccordionOnEdit(id);
+        // Focus input
+        setTimeout(() => {
+            const input = document.getElementById(`edit-name-input-${id}`);
+            if (input) {
+                input.focus();
+                input.select();
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') submitEditName(id);
+                    if (e.key === 'Escape') cancelEditName(id);
+                });
+            }
+        }, 10);
+    }
+
+    function renderAccordionOnEdit(id) {
+        // Re-render only the card being edited
+        fetch(`/api/summary_bandwiths?page=${currentPage}`)
+            .then(response => response.json())
+            .then(data => {
+                renderAccordion(data.items, id);
+            });
+    }
+
+    function cancelEditName(id) {
+        editingId = null;
+        renderAccordionOnEdit(id);
+    }
+
+    function submitEditName(id) {
+        const input = document.getElementById(`edit-name-input-${id}`);
+        const newName = input.value.trim();
+        if (!newName) {
+            input.classList.add('is-invalid');
+            return;
+        }
+        fetch(`/api/summary_bandwiths/${id}/name`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    editingId = null;
+                    fetchHistory(currentPage, id); // Restore expanded panel
+                } else {
+                    alert(data.error || 'Error updating name');
+                }
+            })
+            .catch(() => {
+                alert('Error updating name');
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchHistory();
+    });
+</script>
+{% endblock script %}

@@ -1,0 +1,14 @@
+Title,Time Range,Source Device,Source Device IP,In Interface,Description,Speed,Dest Subnet,Dest Mask,Peak Traffic Rate,Peak Traffic Time,Average Traffic,Average Data
+Utilization BCAF Cabang - BCA Finance Cabang Veteran 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A03-VTR-01,10.96.33.25,GigabitEthernet0/0/0,*** METRO-E INDOSAT ***,1 Gbps,10.97.45.0/24,24,,,,
+BCA Finance Cabang Veteran 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A03-VTR-02,10.96.33.26,GigabitEthernet0/0/0,*** METRO-E TELKOM ***,1 Gbps,10.97.45.0/24,24,,,,
+BCA Finance Cabang Jember 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A07-JBR-R1,10.96.35.9,Tunnel10,*** METRO-E TELKOM ***,20 Mbps,10.97.30.0/24,24,5.74Mbps,9:16 AM for 1m,203.71kbps,786.81 MB
+BCA Finance Cabang Jember 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A07-JBR-R2,10.96.35.10,Tunnel 1,*** MPLS INDOSAT ***,20 Mbps,10.97.30.0/24,24,15.69kbps,8:33 AM for 1m,459.74bps,1.78 MB
+BCA Finance Cabang Iskandar Muda 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",B08-ISM-01.intra.bca.co.id,10.95.238.113,Vlan4,*** Link to BCA Finance ***,1 Gbps,10.97.24.0/24,24,342.67bps,9:52 AM for 1m,17.97bps,71.07 kB
+BCA Finance Cabang Iskandar Muda 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",B08-ISM-02.intra.bca.co.id,10.95.238.114,GigabitEthernet0/0/0,*** MPLS TELKOM ***,6 Mbps,10.97.24.0/24,24,4.24Mbps,11:55 AM for 1m,72.65kbps,280.59 MB
+BCA Finance Cabang Samarinda 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A11-SMD-R1.intra.bca.co.id,10.96.37.9,Tunnel10,*** METRO-E TELKOM ***,20 Mbps,10.97.17.0/24,24,36.6Mbps,8:33 AM for 1m,329.41kbps,1.24 GB
+BCA Finance Cabang Samarinda 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A11-SMD-R2.intra.bca.co.id,10.96.37.10,Tunnel1 1,*** MPLS INDOSAT ***,20 Mbps,10.97.17.0/24,24,121.78kbps,9:27 AM for 1m,1.25kbps,4.83 MB
+BCA Finance Cabang Ruko Jababeka 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",BO9-RJB-01.intra.bca.co.id,10.95.240.91,GigabitEthernet0/0,*** MPLS TELKOM ***,6 Mbps,10.97.7.0/25,25,162.69kbps,9:05 AM for 1m,4.68kbps,18.06 MB
+BCA Finance Cabang Lawang Salapan 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",BO9-LAW-01.intra.bca.co.id,10.95.240.215,Vlan4,*** Link to BCA Finance ***,1 Gbps,10.97.18.0/24,24,,,,
+BCA Finance Cabang Lawang Salapan 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",BO9-LAW-02.intra.bca.co.id,10.95.240.216,GigabitEthernet0/0/0,*** MPLS TELKOM ***,30 Mbps,10.97.18.0/24,24,14.93Mbps,12:12 PM for 1m,413.71kbps,1.56 GB
+BCA Finance Cabang Denpasar 1,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A04-KUT-R1.intra.bca.co.id,10.96.33.139,Tunnel10,*** MPLS INDOSAT ***,30 Mbps,10.97.51.0/24,24,7.71Mbps,9:20 AM for 1m,389.67kbps,1.47 GB
+BCA Finance Cabang Denpasar 2,"Jul 22, 2025, 8:00 AM WIB - 5:00 PM WIB",A04-KUT-R2.intra.bca.co.id,10.96.33.140,Tunnel1 1,*** MPLS TELKOM ***,30 Mbps,10.97.51.0/24,24,1.54Mbps,2:06 PM for 1m,4.79kbps,18.5 MB

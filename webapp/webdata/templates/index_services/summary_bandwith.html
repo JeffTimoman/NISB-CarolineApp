@@ -1,0 +1,108 @@
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">Summary Bandwith - BCA F</div>
+            <div class="card-body">
+                <label for="summaryBandwithFile" class="form-label">Upload Summary Bandwidth</label>
+                <input class="form-control" type="file" id="summaryBandwithFile" name="pdf" multiple>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="csvSuccessModal" tabindex="-1" aria-labelledby="csvSuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="csvSuccessModalLabel">CSV Generated Successfully</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Your CSV file (<span id="csvFilename"></span>) has been generated.<br>
+                <a href="#" id="goToResultBtn" class="btn btn-primary mt-2">Go to Generation Result</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function showFlashMessage(type, message, strongText) {
+        var icon = type === 'success'
+            ? '<i class="bi bi-check-circle-fill me-2"></i>'
+            : '<i class="bi bi-x-circle-fill me-2"></i>';
+        var alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <strong>${icon}${strongText}</strong>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+        $('#flashMessages').append(alertHtml);
+    }
+
+    function parseError(xhr) {
+        try {
+            var resp = JSON.parse(xhr.responseText);
+            return (resp.error ? resp.error : 'Error') + (resp.details ? ': ' + resp.details : '');
+        } catch {
+            return xhr.responseText || 'Unknown error';
+        }
+    }
+
+    $('#summaryBandwithFile').on('change', function (e) {
+        var files = e.target.files;
+        if (!files.length) return;
+        var formData = new FormData();
+        for (var i = 0; i < files.length; i++) {
+            formData.append('pdf', files[i]);
+        }
+
+        showLoading(); // Show spinner before first AJAX
+
+        $.ajax({
+            url: "{{url_for('summary_bandwith.upload_file')}}",
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                showFlashMessage('success', 'Upload succeeded! Generation ID: ' + response.id, 'Success!');
+
+                $.ajax({
+                    url: "{{url_for('summary_bandwith.generate_csv')}}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: response.id }),
+                    success: function (resp) {
+                        showFlashMessage('success', 'CSV generated successfully: ' + resp.csv_filename, 'Success!');
+                        $('#csvFilename').text(resp.csv_filename);
+                        $('#goToResultBtn').attr('href', "{{url_for('summary_bandwith.detail')}}?id=" + resp.id);
+                        
+                        var myModal = new bootstrap.Modal(document.getElementById('csvSuccessModal'));
+                        myModal.show();
+
+                        hideLoading(); // Hide spinner after second AJAX success
+                    },
+                    error: function (xhr) {
+                        showFlashMessage('danger', parseError(xhr), 'Error!');
+                        $('#summaryBandwithFile').val('');
+                        hideLoading(); // Hide spinner after second AJAX error
+                    }
+                });
+            },
+            error: function (xhr) {
+                showFlashMessage('danger', parseError(xhr), 'Error!');
+                $('#summaryBandwithFile').val('');
+                hideLoading(); // Hide spinner after first AJAX error
+            }
+        });
+    });
+
+    function showLoading() {
+        $('#loadingOverlay').css('display', 'flex');
+    }
+    function hideLoading() {
+        $('#loadingOverlay').css('display', 'none');
+    }
+</script>

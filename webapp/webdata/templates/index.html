@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% block title %}Home{% endblock title %}
+{% block style %}{% endblock style%}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-4">
+        {% include 'index_services/summary_bandwith.html'%}
+    </div>
+    <div class="col-md-4">
+        {% include 'index_services/ip_allocation.html'%}
+    </div>
+</div>
+{% endblock body%}
+{% block script %}{% endblock script %}
