@@ -3,7 +3,7 @@
 {% block body %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-10">
+        <div class="col-md-12">
             <a href="{{ request.referrer or url_for('main.index') }}" class="btn btn-outline-secondary mb-3">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
@@ -26,6 +26,11 @@
                         </div>
                     </div>
 
+                    <div class="d-flex justify-content-end mb-3">
+                            <a href="{{ url_for('ip_allocation.edit') }}?id={{ ipalloc.id }}" class="btn btn-sm btn-outline-primary me-2">Edit</a>
+                            <button id="genReportBtn" class="btn btn-sm btn-outline-success" type="button">Generate Report</button>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-sm">
                             <thead>
@@ -35,33 +40,149 @@
                                     <th>Address</th>
                                     <th>Lat</th>
                                     <th>Long</th>
+                                    <th>IP Start</th>
+                                    <th>IP End</th>
+                                    <th>Mask</th>
+                                    <th>Bandwidth</th>
+                                    <th>Quota</th>
+                                    <th>Online Date</th>
                                     <th>PIC BCA</th>
                                     <th>Phone</th>
-                                    <th>Online Date</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for d in details %}
+                                {% for item in allocations %}
+                                {% set d = item.detail %}
                                 <tr>
                                     <td>{{ loop.index }}</td>
                                     <td>{{ d.location }}</td>
                                     <td>{{ d.address }}</td>
                                     <td>{{ d.lat }}</td>
                                     <td>{{ d.long }}</td>
+                                    <td>{{ item.start_ip or '' }}</td>
+                                    <td>{{ item.end_ip or '' }}</td>
+                                    <td>{{ d.mask }}</td>
+                                    <td>{{ d.bandwidth }}</td>
+                                    <td>{{ d.quota }}</td>
+                                    <td>
+                                        {%- if d.online_date -%}
+                                            {%- if d.online_date is string -%}
+                                                {{ d.online_date }}
+                                            {%- else -%}
+                                                {{ d.online_date.strftime('%d %B %Y') }}
+                                            {%- endif -%}
+                                        {%- else -%}
+                                            
+                                        {%- endif -%}
+                                    </td>
                                     <td>{{ d.pic_bca }}</td>
                                     <td>{{ d.pic_bca_phone }}</td>
-                                    <td>{{ d.online_date }}</td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="8" class="text-center">No details found</td></tr>
+                                <tr><td colspan="13" class="text-center">No details found</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-
+                    <!-- Report modal -->
+                    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="reportModalLabel">IP Allocation Report</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-2">Copy the text below and use it in your report:</div>
+                                    <textarea id="reportText" class="form-control" rows="15" style="font-family:monospace; white-space:pre-wrap;"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button id="copyReportBtn" class="btn btn-primary">Copy to clipboard</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+<script>
+    // Build a JS-friendly data array from allocations passed by Jinja
+    const allocationsData = [
+        {% for item in allocations %}
+        {
+            location: {{ item.detail.location|tojson }},
+            address: {{ item.detail.address|tojson }},
+            lat: {{ item.detail.lat|tojson }},
+            long: {{ item.detail.long|tojson }},
+            bandwidth: {{ item.detail.bandwidth|tojson }},
+            quota: {{ item.detail.quota|tojson }},
+            pic_bca: {{ item.detail.pic_bca|tojson }},
+            pic_bca_phone: {{ item.detail.pic_bca_phone|tojson }},
+            online_date: {% if item.detail.online_date %}{% if item.detail.online_date is string %}{{ item.detail.online_date|tojson }}{% else %}{{ item.detail.online_date.strftime('%d %B %Y')|tojson }}{% endif %}{% else %}null{% endif %},
+            ip_start: {{ item.start_ip|tojson }},
+            ip_end: {{ item.end_ip|tojson }},
+            gateway: {{ item.gateway|tojson }},
+            atm_start: {{ item.atm_start|tojson }},
+            atm_end: {{ item.atm_end|tojson }},
+            subnetmask: {{ item.subnetmask|tojson }},
+        },
+        {% endfor %}
+    ];
+
+    function buildReportText() {
+        if (!allocationsData || allocationsData.length === 0) return '';
+        // Helper to pad label to a fixed width so values align vertically
+        function padLabel(lbl, width) {
+            lbl = String(lbl || '');
+            if (lbl.length >= width) return lbl;
+            return lbl + ' '.repeat(width - lbl.length);
+        }
+
+        const LABEL_WIDTH = 18; // characters for label column
+        let parts = [];
+        allocationsData.forEach(function(a, idx) {
+            parts.push((idx+1) + '.');
+            parts.push(padLabel('Lokasi', LABEL_WIDTH) + ': ' + (a.location || ''));
+            parts.push(padLabel('Alamat', LABEL_WIDTH) + ': ' + (a.address || ''));
+            parts.push(padLabel('Lat, Long', LABEL_WIDTH) + ': ' + ((a.lat || '') + ' , ' + (a.long || '')));
+            parts.push(padLabel('Bandwidth', LABEL_WIDTH) + ': ' + (a.bandwidth || ''));
+            parts.push(padLabel('Kuota', LABEL_WIDTH) + ': ' + (a.quota || ''));
+            let picLine = (a.pic_bca || '') + (a.pic_bca_phone ? (' (' + a.pic_bca_phone + ')') : '');
+            parts.push(padLabel('PIC BCA', LABEL_WIDTH) + ': ' + picLine);
+            parts.push(padLabel('Tanggal Online', LABEL_WIDTH) + ': ' + (a.online_date || ''));
+            parts.push('');
+            parts.push('Berikut alokasi IP untuk ATM tersebut:');
+            parts.push(padLabel('IP ATM', LABEL_WIDTH) + ': ' + (a.atm_start || '') + (a.atm_end ? (' – ' + a.atm_end) : ''));
+            parts.push(padLabel('IP Gateway', LABEL_WIDTH) + ': ' + (a.gateway || ''));
+            parts.push(padLabel('Subnetmask', LABEL_WIDTH) + ': ' + (a.subnetmask || ''));
+            parts.push('');
+        });
+        return parts.join('\n');
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        const genBtn = document.getElementById('genReportBtn');
+        const reportModalEl = document.getElementById('reportModal');
+        const reportText = document.getElementById('reportText');
+        const copyBtn = document.getElementById('copyReportBtn');
+        if (!genBtn) return;
+        genBtn.addEventListener('click', function(){
+            const txt = buildReportText();
+            reportText.value = txt;
+            const modal = new bootstrap.Modal(reportModalEl);
+            modal.show();
+        });
+
+        copyBtn.addEventListener('click', function(){
+            reportText.select();
+            navigator.clipboard.writeText(reportText.value).then(function(){
+                copyBtn.textContent = 'Copied';
+                setTimeout(()=> copyBtn.textContent = 'Copy to clipboard', 1500);
+            });
+        });
+    });
+</script>
 </div>
 {% endblock %}

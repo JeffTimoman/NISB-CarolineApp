@@ -49,6 +49,9 @@ class IpAllocationDetail(db.Model):
     bandwidth = db.Column(db.String(50), default="64 Kbps")
     quota = db.Column(db.String(50), default="1 Gb")
     
+    start_ip = db.Column(db.String(50), default="-")
+    end_ip = db.Column(db.String(50), default="-")
+    
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
     

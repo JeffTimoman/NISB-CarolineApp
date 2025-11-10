@@ -75,6 +75,21 @@ def download_csv(id):
         download_name=download_name
     )
 
+
+@main.route('/download/format_excel')
+def download_format_excel():
+    """Send the sample FormatExcel.xlsx file from the static folder as an attachment."""
+    filename = 'FormatExcel.xlsx'
+    file_path = os.path.join(current_app.static_folder, filename)
+    if not os.path.exists(file_path):
+        abort(404)
+    return send_from_directory(
+        directory=current_app.static_folder,
+        path=filename,
+        as_attachment=True,
+        download_name=filename
+    )
+
 @main.route('/api/summary_bandwiths/<id>/name', methods=['PUT'])
 def update_summary_bandwith_name(id):
     data = request.get_json()

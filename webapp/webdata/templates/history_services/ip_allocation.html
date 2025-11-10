@@ -1,0 +1,86 @@
+<div class="container mt-4">
+    <h2>IP Allocation History</h2>
+    <div id="accordion-ipalloc">
+
+    </div>
+    <nav>
+        <ul class="pagination justify-content-center mt-3" id="pagination-ipalloc">
+
+        </ul>
+    </nav>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let ipAllocEditingId = null;
+    let ipAllocCurrentPage = 1;
+
+    function fetchIpAllocHistory(page = 1, expandId = null) {
+        ipAllocCurrentPage = page;
+        // Use the URL for the Flask route so the blueprint prefix is respected
+        const apiUrl = "{{ url_for('ip_allocation.api_ip_allocations') }}";
+        fetch(apiUrl + '?page=' + encodeURIComponent(page))
+            .then(response => response.json())
+            .then(data => {
+                renderIpAllocAccordion(data.items, expandId);
+                renderIpAllocPagination(data.page, data.pages, data.has_prev, data.has_next, data.prev_num, data.next_num);
+            });
+    }
+
+    function renderIpAllocAccordion(items, expandId = null) {
+        const container = document.getElementById('accordion-ipalloc');
+        container.innerHTML = '';
+        if (items.length === 0) {
+            container.innerHTML = '<p>No IP allocations found.</p>';
+            return;
+        }
+        items.forEach((item, idx) => {
+            const collapseId = `collapse-ipalloc-${item.id}`;
+            const isExpanded = expandId ? (expandId === item.id) : (idx === 0);
+            container.innerHTML += `
+            <div class="card" id="card-ipalloc-${item.id}">
+                <div class="card-header" id="heading-ipalloc-${item.id}">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <button class="btn btn-link flex-grow-1 text-left" data-toggle="collapse" data-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                            <span id="ipalloc-display-${item.id}">Start: ${item.start_ip} &mdash; ${item.provider || '-'} </span>
+                            <span class="text-muted">(${item.created_at})</span>
+                        </button>
+                        <a href="/ip_allocation/detail?id=${item.id}" class="btn btn-sm btn-light ml-2" title="View details">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    </h5>
+                </div>
+                <div id="${collapseId}" class="collapse ${isExpanded ? 'show' : ''}" aria-labelledby="heading-ipalloc-${item.id}" data-parent="#accordion-ipalloc">
+                   <div class="card-body">
+                    <p><strong>Start IP:</strong> ${item.start_ip || '-'}</p>
+                    <p><strong>Provider:</strong> ${item.provider || '-'}</p>
+                    <p><strong>Uploaded Excel:</strong> ${item.original_excel_name || '-'} (${item.excel_filename || '-'})</p>
+                    <p><strong>Created At:</strong> ${item.created_at}</p>
+                    <p><strong>Updated At:</strong> ${item.updated_at}</p>
+                   </div>
+                </div>
+            </div>
+        `;
+        });
+    }
+
+    function renderIpAllocPagination(current, total, hasPrev, hasNext, prevNum, nextNum) {
+        const pag = document.getElementById('pagination-ipalloc');
+        pag.innerHTML = '';
+        if (hasPrev) {
+            pag.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchIpAllocHistory(${prevNum});return false;">Previous</a></li>`;
+        }
+        for (let i = 1; i <= total; i++) {
+            pag.innerHTML += `<li class="page-item ${i === current ? 'active' : ''}"><a class="page-link" href="#" onclick="fetchIpAllocHistory(${i});return false;">${i}</a></li>`;
+        }
+        if (hasNext) {
+            pag.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchIpAllocHistory(${nextNum});return false;">Next</a></li>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchIpAllocHistory();
+    });
+</script>

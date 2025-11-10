@@ -1,0 +1,145 @@
+{% extends 'layout.html' %}
+{% block title %}Edit IP Allocation{% endblock %}
+{% block body %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <a href="{{ url_for('ip_allocation.detail') }}?id={{ ipalloc.id }}" class="btn btn-outline-secondary mb-3">
+                <i class="bi bi-arrow-left"></i> Back to Detail
+            </a>
+
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4 class="mb-0">Edit IP Allocation - {{ ipalloc.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <input type="hidden" name="ipalloc_id" value="{{ ipalloc.id }}">
+
+                        <div class="mb-3 row">
+                            <label class="col-sm-2 col-form-label"><strong>Start IP</strong></label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control" value="{{ ipalloc.start_ip }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3 row">
+                            <label class="col-sm-2 col-form-label"><strong>Provider</strong></label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control" value="{{ ipalloc.provider }}">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        <th style="width:60px">#</th>
+                                        <th>Location</th>
+                                        <th>Address</th>
+                                        <th>Lat</th>
+                                        <th>Long</th>
+                                        <th>Mask</th>
+                                        <th>Bandwidth</th>
+                                        <th>Quota</th>
+                                        <th>Online Date</th>
+                                        <th>PIC BCA</th>
+                                        <th>Phone</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="details-tbody">
+                                    {% for d in details %}
+                                    <tr data-id="{{ d.id }}">
+                                        <td class="align-middle drag-cell">
+                                            <span class="drag-handle" style="cursor:grab;">☰</span>
+                                            <span class="row-index ms-2">{{ loop.index }}</span>
+                                        </td>
+                                        <td><input class="form-control form-control-sm" name="location-{{ d.id }}" value="{{ d.location or '' }}"></td>
+                                        <td><input class="form-control form-control-sm" name="address-{{ d.id }}" value="{{ d.address or '' }}"></td>
+                                        <td><input class="form-control form-control-sm" name="lat-{{ d.id }}" value="{{ d.lat or '' }}"></td>
+                                        <td><input class="form-control form-control-sm" name="long-{{ d.id }}" value="{{ d.long or '' }}"></td>
+                                        <td>
+                                            <select class="form-select form-select-sm mask-select" name="mask-{{ d.id }}" style="min-width:120px;">
+                                                {# Generate masks from /30 down to /24 in descending order #}
+                                                {% for prefix in range(30, 23, -1) %}
+                                                    {% set m = '/' ~ prefix %}
+                                                    {% set block = (2 ** (32 - prefix)) %}
+                                                    {% set usable = block - 2 if block > 2 else 0 %}
+                                                    <option value="{{ m }}" {% if d.mask == m %}selected{% endif %}>{{ m }} — {{ usable }} usable hosts</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td><input class="form-control form-control-sm" name="bandwidth-{{ d.id }}" value="{{ d.bandwidth or '' }}"></td>
+                                        <td><input class="form-control form-control-sm" name="quota-{{ d.id }}" value="{{ d.quota or '' }}"></td>
+                                        <td>
+                                            {% set od = d.online_date %}
+                                            {% if od %}
+                                                {% if od is string %}
+                                                    {% set od_val = od %}
+                                                {% else %}
+                                                    {% set od_val = od.strftime('%Y-%m-%dT%H:%M') %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% set od_val = '' %}
+                                            {% endif %}
+                                            <input type="datetime-local" class="form-control form-control-sm" name="online_date-{{ d.id }}" value="{{ od_val }}">
+                                        </td>
+                                        <td><input class="form-control form-control-sm" name="pic_bca-{{ d.id }}" value="{{ d.pic_bca or '' }}"></td>
+                                        <td><input class="form-control form-control-sm" name="pic_bca_phone-{{ d.id }}" value="{{ d.pic_bca_phone or '' }}"></td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="11" class="text-center">No details found</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <a href="{{ url_for('ip_allocation.detail') }}?id={{ ipalloc.id }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    (function(){
+        const tbody = document.getElementById('details-tbody');
+        if (!tbody) return;
+
+        // Initialize Sortable
+        const sortable = Sortable.create(tbody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+                // update visible row index after reorder
+                Array.from(tbody.querySelectorAll('tr')).forEach(function(row, idx){
+                    const idxSpan = row.querySelector('.row-index');
+                    if (idxSpan) idxSpan.textContent = idx + 1;
+                });
+            }
+        });
+
+        // Before form submit, append order inputs so backend can persist order
+        const form = tbody.closest('form');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+            // remove previous order inputs if any
+            Array.from(form.querySelectorAll('input[name^="order-"]')).forEach(function(i){ i.remove(); });
+
+            Array.from(tbody.querySelectorAll('tr')).forEach(function(row, idx){
+                const id = row.getAttribute('data-id');
+                if (!id) return;
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'order-' + id;
+                input.value = (idx + 1).toString();
+                form.appendChild(input);
+            });
+        });
+    })();
+</script>
+{% endblock %}

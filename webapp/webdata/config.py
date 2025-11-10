@@ -28,3 +28,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     USER = "Olineee"
     TESSERACT_CMD_PATH = os.path.join(project_root, 'Tesseract-OCR', 'tesseract.exe')
+    # SECRET_KEY is required for Flask sessions (used by flash()).
+    # Prefer setting this via environment variable in production. If not provided,
+    # a default development key is used (not secure for production).
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'change-me-in-production')
