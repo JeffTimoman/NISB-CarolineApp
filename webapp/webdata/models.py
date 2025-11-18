@@ -6,6 +6,10 @@ from datetime import datetime
 def default_name():
     return f"Summary Bandwith - {datetime.now().strftime('%d:%m:%y %H:%M')}"
 
+
+def default_ipalloc_name():
+    return f"IP Allocation - {datetime.now().strftime('%d:%m:%y %H:%M')}"
+
 class SummaryBandwith(db.Model):
     __tablename__ = "summarybandwiths"
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
@@ -19,6 +23,7 @@ class SummaryBandwith(db.Model):
 class IpAllocation(db.Model):
     __tablename__ = "ipallocations"
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
+    name = db.Column(db.String(200), default=default_ipalloc_name)
     start_ip = db.Column(db.String(50))
     provider = db.Column(db.String(100))
     details = db.relationship("IpAllocationDetail", backref="ipallocation", cascade="all, delete-orphan", lazy=True)

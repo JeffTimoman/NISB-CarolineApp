@@ -43,13 +43,7 @@
             <div class="card" id="card-ipalloc-${item.id}">
                 <div class="card-header" id="heading-ipalloc-${item.id}">
                     <h5 class="mb-0 d-flex align-items-center">
-                        <button class="btn btn-link flex-grow-1 text-left" data-toggle="collapse" data-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                            <span id="ipalloc-display-${item.id}">Start: ${item.start_ip} &mdash; ${item.provider || '-'} </span>
-                            <span class="text-muted">(${item.created_at})</span>
-                        </button>
-                        <a href="/ip_allocation/detail?id=${item.id}" class="btn btn-sm btn-light ml-2" title="View details">
-                            <i class="fa fa-eye"></i>
-                        </a>
+                        ${ipAllocEditingId === item.id ? renderEditNameInputIpAlloc(item) : renderHeaderIpAlloc(item)}
                     </h5>
                 </div>
                 <div id="${collapseId}" class="collapse ${isExpanded ? 'show' : ''}" aria-labelledby="heading-ipalloc-${item.id}" data-parent="#accordion-ipalloc">
@@ -83,4 +77,66 @@
     document.addEventListener('DOMContentLoaded', function () {
         fetchIpAllocHistory();
     });
+</script>
+
+<script>
+    function renderHeaderIpAlloc(item) {
+        return `
+        <button class="btn btn-link flex-grow-1 text-left" data-toggle="collapse" data-target="#collapse-ipalloc-${item.id}" aria-expanded="false" aria-controls="collapse-ipalloc-${item.id}">
+            <span id="ipalloc-name-display-${item.id}">${item.name}</span>
+            <span class="text-muted">(${item.created_at})</span>
+        </button>
+        <button class="btn btn-sm btn-light ml-2 btn-edit-name-ipalloc" title="Edit name" onclick="startEditNameIpAlloc('${item.id}', '${(item.name||'').replace(/'/g, "\\'")}'); event.stopPropagation();">
+            <i class="fa fa-pen"></i>
+        </button>
+        <a href="/ip_allocation/detail?id=${item.id}" class="btn btn-sm btn-light ml-2" title="View details">
+            <i class="fa fa-eye"></i>
+        </a>
+    `;
+    }
+
+    function renderEditNameInputIpAlloc(item) {
+        return `
+        <span class="flex-grow-1">
+            <input type="text" class="form-control form-control-sm d-inline-block" id="edit-ipalloc-name-input-${item.id}" value="${(item.name||'').replace(/\"/g, '&quot;')}" style="max-width: 300px;">
+        </span>
+        <button class="btn btn-sm btn-success ml-1" onclick="submitEditNameIpAlloc('${item.id}')"><i class="fa fa-check"></i></button>
+        <button class="btn btn-sm btn-danger ml-1" onclick="cancelEditNameIpAlloc('${item.id}')"><i class="fa fa-times"></i></button>
+    `;
+    }
+
+    function startEditNameIpAlloc(id, currentName) {
+        if (ipAllocEditingId) return; // only one at a time
+        ipAllocEditingId = id;
+        renderIpAllocAccordionOnEdit(id);
+        setTimeout(() => {
+            const input = document.getElementById(`edit-ipalloc-name-input-${id}`);
+            if (input) {
+                input.focus(); input.select();
+                input.addEventListener('keydown', function(e){ if (e.key === 'Enter') submitEditNameIpAlloc(id); if (e.key === 'Escape') cancelEditNameIpAlloc(id); });
+            }
+        }, 10);
+    }
+
+    function renderIpAllocAccordionOnEdit(id) {
+        fetch(`{{ url_for('ip_allocation.api_ip_allocations') }}?page=${ipAllocCurrentPage}`)
+            .then(r=>r.json()).then(data=>{ renderIpAllocAccordion(data.items, id); });
+    }
+
+    function cancelEditNameIpAlloc(id) {
+        ipAllocEditingId = null;
+        renderIpAllocAccordionOnEdit(id);
+    }
+
+    function submitEditNameIpAlloc(id) {
+        const input = document.getElementById(`edit-ipalloc-name-input-${id}`);
+        const newName = input.value.trim();
+        if (!newName) { input.classList.add('is-invalid'); return; }
+        fetch(`{{ url_for('ip_allocation.update_ip_allocation_name', id='__ID__') }}`.replace('__ID__', encodeURIComponent(id)), {
+            method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: newName})
+        }).then(r=>r.json()).then(data=>{
+            if (data.success) { ipAllocEditingId = null; fetchIpAllocHistory(ipAllocCurrentPage, id); }
+            else alert(data.error || 'Error updating name');
+        }).catch(()=>alert('Error updating name'));
+    }
 </script>
