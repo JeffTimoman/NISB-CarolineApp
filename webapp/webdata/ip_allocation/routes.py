@@ -9,7 +9,7 @@ import os
 from docx import Document
 from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
-from docx.enum.table import WD_ROW_HEIGHT_RULE
+from docx.enum.table import WD_ROW_HEIGHT_RULE, WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from datetime import datetime
@@ -479,13 +479,11 @@ def generate_spk():
 
     # === PERIHAL directly after address block ===
     p_perihal = doc.add_paragraph()
-    make_tight(p_perihal)
     r_label = p_perihal.add_run('Perihal: ')
     set_run_font(r_label, 'Verdana', 11, bold=True, underline=True)
     # value remains empty
 
-    # ONE blank line between Perihal and Sehubungan
-    doc.add_paragraph('')
+    # NO blank line between Perihal and Sehubungan (keep default spacing)
 
     # === BODY INTRO (Sehubungan...) – Arial 11 ===
     p_body1 = doc.add_paragraph()
@@ -542,6 +540,29 @@ def generate_spk():
     table.autofit = False
     table.allow_autofit = False
 
+    # indent table 0.5 cm from left (table property tblInd uses dxa units)
+    try:
+        tbl = table._tbl
+        tblPr = tbl.find(qn('w:tblPr'))
+        if tblPr is None:
+            tblPr = OxmlElement('w:tblPr')
+            tbl.insert(0, tblPr)
+        tblInd = tblPr.find(qn('w:tblInd'))
+        if tblInd is None:
+            tblInd = OxmlElement('w:tblInd')
+            tblPr.append(tblInd)
+        # 1 cm ~= 567 dxa, so 0.8 cm ~= 454
+        tblInd.set(qn('w:w'), str(int(0.8 * 567)))
+        tblInd.set(qn('w:type'), 'dxa')
+    except Exception:
+        current_app.logger.warning('Failed to set table left indent')
+
+    # center the table within the page width
+    try:
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    except Exception:
+        pass
+
     # Main table columns: 1.2" + 5.64"
     left_col_width = Inches(1.2)
     right_col_width = Inches(5.64)
@@ -549,13 +570,22 @@ def generate_spk():
     def add_row(label, value, bold_value=False):
         row = table.add_row()
         row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
-        row.height = Inches(0.11)  # minimal height
+        row.height = Inches(0.2)  # minimal height (user requested 0.2")
 
         # Left cell (label)
         c0 = row.cells[0]
         c0.width = left_col_width
         c0.text = ""
         p0 = c0.paragraphs[0]
+        # left-align label text but vertically center the cell
+        try:
+            p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        except Exception:
+            pass
+        try:
+            c0.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        except Exception:
+            pass
         r0 = p0.add_run(label)
         set_run_font(r0, 'Arial', 11, bold=False)
 
@@ -566,6 +596,10 @@ def generate_spk():
         if value is None:
             value = ""
         p1 = c1.paragraphs[0]
+        try:
+            c1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        except Exception:
+            pass
         lines = str(value).split('\n')
         for i, line in enumerate(lines):
             r_line = p1.add_run(line)
